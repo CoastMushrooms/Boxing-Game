@@ -1,4 +1,4 @@
-# 🥊 Last Season — Boxing Game (Desktop)
+# Last Season — Boxing Game (Desktop)
 
 Ported from Android Studio to a standalone desktop Java app.  
 All game logic, assets, audio, and sprites from the original are preserved.

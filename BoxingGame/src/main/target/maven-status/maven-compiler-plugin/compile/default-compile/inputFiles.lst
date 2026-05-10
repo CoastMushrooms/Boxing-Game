@@ -1,0 +1,15 @@
+/workspaces/Boxing-Game/src/main/java/com/boxergame/FightScreen.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/GameState.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/SaveManager.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/ShopScreen.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/SoundManager.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/IdleEngine.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/ResultScreen.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/GameConstants.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/EnemyData.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/EnemyRoster.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/FightEngine.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/FightView.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/LobbyScreen.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/App.java
+/workspaces/Boxing-Game/src/main/java/com/boxergame/Assets.java
