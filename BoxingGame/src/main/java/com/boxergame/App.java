@@ -5,15 +5,11 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-/**
- * App — main entry point. Replaces Android Activity stack with JFrame + CardLayout.
- * Run with:  java -jar BoxingGame.jar
- */
 public class App {
 
-    private static final String CARD_LOBBY  = "lobby";
-    private static final String CARD_FIGHT  = "fight";
-    private static final String CARD_SHOP   = "shop";
+    private static final String CARD_LOBBY = "lobby";
+    private static final String CARD_FIGHT = "fight";
+    private static final String CARD_SHOP = "shop";
     private static final String CARD_RESULT = "result";
 
     private JFrame       mFrame;
@@ -35,12 +31,11 @@ public class App {
             @Override public void windowClosing(WindowEvent e) { onExit(); }
         });
 
-        mSave       = new SaveManager();
+        mSave = new SaveManager();
         mCardLayout = new CardLayout();
-        mCards      = new JPanel(mCardLayout);
+        mCards = new JPanel(mCardLayout);
         mCards.setBackground(Color.BLACK);
 
-        // Build lobby with listener inline
         SoundManager lobbySound = new SoundManager();
         mLobby = new LobbyScreen(mSave, lobbySound, new LobbyScreen.LobbyListener() {
             public void onFightSelected(int idx) { App.this.onFightSelected(idx); }
@@ -65,8 +60,6 @@ public class App {
         }
     }
 
-    // ── Screen navigation ─────────────────────────────────────────────────────
-
     private void showLobby() {
         mLobby.onResume();
         mCardLayout.show(mCards, CARD_LOBBY);
@@ -90,7 +83,6 @@ public class App {
     }
 
     private void onFightFinished(boolean won, float moneyDelta, float fameDelta, int fightIndex) {
-        // Championship progress already written by FightEngine; reload and save all
         int progress = mSave.load();
         mSave.save(progress);
 
@@ -127,8 +119,6 @@ public class App {
         }
     }
 
-    // ── Offline earnings ──────────────────────────────────────────────────────
-
     private void checkOfflineEarnings() {
         long lastMs = mSave.getLastOnlineMs();
         if (!GameState.get().muscleMemoryUnlocked.get() || lastMs <= 0) return;
@@ -140,8 +130,6 @@ public class App {
             JOptionPane.showMessageDialog(mFrame, result.summary(), "Welcome Back!", JOptionPane.INFORMATION_MESSAGE);
         }
     }
-
-    // ── Exit ──────────────────────────────────────────────────────────────────
 
     private void onExit() {
         mLobby.onPause();

@@ -10,21 +10,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Desktop replacement for Android's R.drawable / R.raw resource system.
- * PNGs are loaded from /drawable/<name>.png bundled in the JAR.
- * WAVs are loaded from /raw/<name>.wav bundled in the JAR.
- * Vector XML drawables (items, endings) are rendered procedurally.
- */
 public final class Assets {
 
     private static final Map<String, BufferedImage> imageCache = new HashMap<>();
 
     private Assets() {}
 
-    // ── Images ────────────────────────────────────────────────────────────────
-
-    /** Returns a scaled image, or a generated fallback if the PNG is missing. */
     public static BufferedImage getImage(String name, int w, int h) {
         if (name == null) return null;
         String key = name + "_" + w + "_" + h;
@@ -34,7 +25,6 @@ public final class Assets {
     private static BufferedImage loadOrGenerate(String name, int w, int h) {
         BufferedImage src = loadPng(name);
         if (src != null) return scaleTo(src, w, h);
-        // Fall back to procedurally generated image
         return generateFallback(name, w, h);
     }
 
@@ -55,12 +45,6 @@ public final class Assets {
         return out;
     }
 
-    /**
-     * Generates a simple colored icon for XML vector drawables we can't load directly.
-     * Covers: item_gloves, item_shoes, item_armor, item_muscle,
-     *         ending_legend, ending_forgotten, ending_rich, ending_beloved,
-     *         bg_* arena backgrounds.
-     */
     private static BufferedImage generateFallback(String name, int w, int h) {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
@@ -92,10 +76,8 @@ public final class Assets {
                 drawEndingCard(g, w, h, new Color(0xE91E63), "⭐ BELOVED");
                 break;
             default:
-                // Arena backgrounds — solid dark colours
                 g.setColor(bgColor(name));
                 g.fillRect(0, 0, w, h);
-                // Simple floor/spotlight gradient
                 GradientPaint gp = new GradientPaint(w/2f, 0, new Color(0,0,0,0),
                                                      w/2f, h, new Color(255,255,255,30));
                 g.setPaint(gp);
@@ -119,11 +101,9 @@ public final class Assets {
     private static void drawEndingCard(Graphics2D g, int w, int h, Color accent, String label) {
         g.setColor(new Color(0x1A1A2E));
         g.fillRect(0, 0, w, h);
-        // Outer ring
         g.setColor(accent);
         g.setStroke(new BasicStroke(6f));
         g.drawOval(10, 10, w-20, h-20);
-        // Label
         g.setFont(new Font("SansSerif", Font.BOLD, Math.max(12, w/12)));
         g.setColor(accent);
         FontMetrics fm = g.getFontMetrics();
@@ -132,8 +112,6 @@ public final class Assets {
         if (parts.length > 1)
             g.drawString(parts[1], (w - fm.stringWidth(parts[1]))/2, h/2 + fm.getHeight());
     }
-
-    // ── Background colour lookup ───────────────────────────────────────────────
 
     public static Color bgColor(String name) {
         if (name == null) return new Color(0x0d0d1a);
@@ -148,9 +126,6 @@ public final class Assets {
         }
     }
 
-    // ── Sounds ────────────────────────────────────────────────────────────────
-
-    /** Open a Clip for a sound file. Returns null if not found or audio unavailable. */
     public static Clip openClip(String name) {
         String path = "/raw/" + name + ".wav";
         InputStream is = Assets.class.getResourceAsStream(path);

@@ -4,14 +4,13 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 
-/** Desktop replacement for ShopActivity. */
 public class ShopScreen extends JPanel {
 
     public interface ShopListener { void onBackClicked(); }
 
     private static final int[] GLOVES_COSTS = { 800, 2000, 4500 };
-    private static final int[] SHOES_COSTS  = { 600, 1500, 3500 };
-    private static final int[] ARMOR_COSTS  = { 900, 2200, 5000 };
+    private static final int[] SHOES_COSTS = { 600, 1500, 3500 };
+    private static final int[] ARMOR_COSTS = { 900, 2200, 5000 };
 
     private final GameState   mState = GameState.get();
     private final SaveManager mSave;
@@ -21,14 +20,14 @@ public class ShopScreen extends JPanel {
     private JLabel mTvGloves, mTvShoes, mTvArmor, mTvMuscle;
     private JButton mBtnGloves, mBtnShoes, mBtnArmor, mBtnMuscle;
 
-    private static final Color BG       = new Color(0x1A1A2E);
-    private static final Color PANEL    = new Color(0x16213E);
-    private static final Color GOLD     = new Color(0xFFD700);
-    private static final Color BTN_CLR  = new Color(0xE53935);
+    private static final Color BG = new Color(0x1A1A2E);
+    private static final Color PANEL = new Color(0x16213E);
+    private static final Color GOLD = new Color(0xFFD700);
+    private static final Color BTN_CLR = new Color(0xE53935);
     private static final Color BTN_GOLD = new Color(0xB8860B);
 
     public ShopScreen(SaveManager save, ShopListener listener) {
-        mSave     = save;
+        mSave = save;
         mListener = listener;
         setBackground(BG);
         setLayout(new BorderLayout(0, 0));
@@ -37,7 +36,6 @@ public class ShopScreen extends JPanel {
     }
 
     private void buildUI() {
-        // Title bar
         JPanel titleBar = new JPanel(new BorderLayout());
         titleBar.setBackground(PANEL);
         titleBar.setBorder(new EmptyBorder(8, 12, 8, 12));
@@ -56,38 +54,33 @@ public class ShopScreen extends JPanel {
         titleBar.add(title,     BorderLayout.CENTER);
         titleBar.add(mTvMoney,  BorderLayout.SOUTH);
 
-        // Items list
         JPanel items = new JPanel();
         items.setLayout(new BoxLayout(items, BoxLayout.Y_AXIS));
         items.setBackground(BG);
         items.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-        // Gloves card
-        mTvGloves  = itemLabel("");
+        mTvGloves = itemLabel("");
         mBtnGloves = styledBtn("UPGRADE", BTN_CLR);
         mBtnGloves.addActionListener(e -> buyGloves());
         items.add(makeItemCard(Assets.getImage("item_gloves", 48, 48),
                                mTvGloves, mBtnGloves, PANEL));
         items.add(Box.createVerticalStrut(10));
 
-        // Shoes card
-        mTvShoes  = itemLabel("");
+        mTvShoes = itemLabel("");
         mBtnShoes = styledBtn("UPGRADE", BTN_CLR);
         mBtnShoes.addActionListener(e -> buyShoes());
         items.add(makeItemCard(Assets.getImage("item_shoes", 48, 48),
                                mTvShoes, mBtnShoes, PANEL));
         items.add(Box.createVerticalStrut(10));
 
-        // Armor card
-        mTvArmor  = itemLabel("");
+        mTvArmor = itemLabel("");
         mBtnArmor = styledBtn("UPGRADE", BTN_CLR);
         mBtnArmor.addActionListener(e -> buyArmor());
         items.add(makeItemCard(Assets.getImage("item_armor", 48, 48),
                                mTvArmor, mBtnArmor, PANEL));
         items.add(Box.createVerticalStrut(10));
 
-        // Muscle Memory card (gold)
-        mTvMuscle  = itemLabel("");
+        mTvMuscle = itemLabel("");
         mBtnMuscle = styledBtn("BUY MUSCLE MEMORY", BTN_GOLD);
         mBtnMuscle.addActionListener(e -> buyMuscle());
         items.add(makeItemCard(Assets.getImage("item_muscle", 48, 48),
@@ -122,8 +115,6 @@ public class ShopScreen extends JPanel {
         return card;
     }
 
-    // ── Refresh ───────────────────────────────────────────────────────────────
-
     private void refreshAll() {
         mTvMoney.setText("Balance: $" + (int) mState.getMoney());
 
@@ -135,14 +126,14 @@ public class ShopScreen extends JPanel {
             + "+25% damage, +15% earnings per level<br>"
             + "Damage ×" + String.format("%.2f", mState.getDamageMult()) + "<br>"
             + "Cost: " + (gl < GLOVES_COSTS.length ? "$" + GLOVES_COSTS[gl] : "MAX") + "</html>");
-        mBtnGloves.setText(gl < GLOVES_COSTS.length ? "UPGRADE  $" + GLOVES_COSTS[gl] : "MAXED ✅");
+        mBtnGloves.setText(gl < GLOVES_COSTS.length ? "UPGRADE  $" + GLOVES_COSTS[gl] : "MAXED");
         mBtnGloves.setEnabled(gl < GLOVES_COSTS.length);
 
         mTvShoes.setText("<html><b>Speed Shoes  Lv " + sh + "/" + SHOES_COSTS.length + "</b><br>"
             + "+20% earnings per level<br>"
             + "Earn ×" + String.format("%.2f", mState.getEarnMult()) + "<br>"
             + "Cost: " + (sh < SHOES_COSTS.length ? "$" + SHOES_COSTS[sh] : "MAX") + "</html>");
-        mBtnShoes.setText(sh < SHOES_COSTS.length ? "UPGRADE  $" + SHOES_COSTS[sh] : "MAXED ✅");
+        mBtnShoes.setText(sh < SHOES_COSTS.length ? "UPGRADE  $" + SHOES_COSTS[sh] : "MAXED");
         mBtnShoes.setEnabled(sh < SHOES_COSTS.length);
 
         int defPct = Math.round((1f - mState.getDefenseMult()) * 100);
@@ -150,18 +141,16 @@ public class ShopScreen extends JPanel {
             + "-15% damage taken per level<br>"
             + "Damage reduced: " + defPct + "%<br>"
             + "Cost: " + (ar < ARMOR_COSTS.length ? "$" + ARMOR_COSTS[ar] : "MAX") + "</html>");
-        mBtnArmor.setText(ar < ARMOR_COSTS.length ? "UPGRADE  $" + ARMOR_COSTS[ar] : "MAXED ✅");
+        mBtnArmor.setText(ar < ARMOR_COSTS.length ? "UPGRADE  $" + ARMOR_COSTS[ar] : "MAXED");
         mBtnArmor.setEnabled(ar < ARMOR_COSTS.length);
 
         boolean muscle = mState.muscleMemoryUnlocked.get();
         mTvMuscle.setText("<html><b>Muscle Memory</b><br>"
-            + (muscle ? "✅ OWNED — earns $ passively while you're away"
+            + (muscle ? "OWNED — earns $ passively while you're away"
                       : "Auto-earn idle engine. Earns money even offline.<br>Cost: $" + GameConstants.MUSCLE_MEMORY_COST) + "</html>");
-        mBtnMuscle.setText(muscle ? "OWNED ✅" : "BUY  $" + GameConstants.MUSCLE_MEMORY_COST);
+        mBtnMuscle.setText(muscle ? "OWNED" : "BUY  $" + GameConstants.MUSCLE_MEMORY_COST);
         mBtnMuscle.setEnabled(!muscle);
     }
-
-    // ── Purchases ─────────────────────────────────────────────────────────────
 
     private void buyGloves() {
         int lvl = mState.getGlovesLevel();

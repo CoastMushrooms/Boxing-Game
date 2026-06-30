@@ -4,10 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-/**
- * Desktop replacement for FightActivity.
- * A JPanel that contains FightView + HUD + action buttons.
- */
 public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
     public interface FightScreenListener {
@@ -16,7 +12,7 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
     private final FightScreenListener mListener;
     private final EnemyData           mEnemy;
-    private final int                 mFightIndex;
+    private final int mFightIndex;
     private final GameState           mState = GameState.get();
 
     private FightView    mFightView;
@@ -29,54 +25,49 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
     private IdleEngine   mIdle;
     private SoundManager mSound;
 
-    private int  mCurrentPlayerAnim = FightView.ANIM_NORMAL;
-    private int  mCurrentEnemyAnim  = FightView.ANIM_NORMAL;
+    private int mCurrentPlayerAnim = FightView.ANIM_NORMAL;
+    private int mCurrentEnemyAnim = FightView.ANIM_NORMAL;
     private boolean mWinFired = false;
 
     private int[] mActiveCombo = null;
-    private int   mComboStep  = 0;
+    private int mComboStep = 0;
 
     private static final long AUTO_IDLE_MS = 4000L;
     private Timer mAutoIdleTimer;
 
     public FightScreen(EnemyData enemy, int fightIndex, FightScreenListener listener) {
-        mEnemy       = enemy;
-        mFightIndex  = fightIndex;
-        mListener    = listener;
+        mEnemy = enemy;
+        mFightIndex = fightIndex;
+        mListener = listener;
         setLayout(new BorderLayout());
         setBackground(Color.BLACK);
         buildUI();
         startFight();
     }
 
-    // ── UI Construction ───────────────────────────────────────────────────────
-
     private void buildUI() {
-        // --- TOP HUD ---
         JPanel hud = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
         hud.setBackground(new Color(0, 0, 0, 200));
 
-        JButton btnExit = makeButton("🚪", new Color(0x333333), Color.WHITE);
+        JButton btnExit = makeButton("", new Color(0x333333), Color.WHITE);
         btnExit.addActionListener(e -> exitFight());
         hud.add(btnExit);
 
-        mTvMoney    = hudLabel("$0",    new Color(0xFFD700));
+        mTvMoney = hudLabel("$0",    new Color(0xFFD700));
         mTvOpponent = hudLabel(mEnemy.name, Color.WHITE);
-        mTvFame     = hudLabel("⭐ 0",  new Color(0xF39C12));
+        mTvFame = hudLabel("0",  new Color(0xF39C12));
         hud.add(mTvMoney);
         hud.add(Box.createHorizontalStrut(20));
         hud.add(mTvOpponent);
         hud.add(Box.createHorizontalStrut(20));
         hud.add(mTvFame);
 
-        // --- FIGHT VIEW ---
         mFightView = new FightView();
         mFightView.setArenaBackground(mEnemy.backgroundDrawable);
         mFightView.setPlayerSprites("player_normal","player_punch","player_block","player_charged","player_hurt");
         mFightView.setEnemySprites(mEnemy.drawableNormal, mEnemy.drawablePunch,
                                    mEnemy.drawableBlock,  mEnemy.drawableHurt);
 
-        // --- EVENT LABEL ---
         mTvEvent = new JLabel("", SwingConstants.CENTER);
         mTvEvent.setFont(new Font("SansSerif", Font.BOLD, 26));
         mTvEvent.setForeground(Color.WHITE);
@@ -89,12 +80,11 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         mTvMusclePassive.setForeground(new Color(200, 200, 200, 150));
         mTvMusclePassive.setVisible(false);
 
-        mTvAutoFight = new JLabel("💪 Muscle Memory fighting…", SwingConstants.RIGHT);
+        mTvAutoFight = new JLabel("Muscle Memory fighting…", SwingConstants.RIGHT);
         mTvAutoFight.setFont(new Font("SansSerif", Font.PLAIN, 11));
         mTvAutoFight.setForeground(new Color(0, 255, 153, 170));
         mTvAutoFight.setVisible(false);
 
-        // Layered pane for fight view + overlays
         JLayeredPane layers = new JLayeredPane();
         layers.setPreferredSize(new Dimension(720, 960));
         mFightView.setBounds(0, 0, 720, 960);
@@ -106,7 +96,6 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         layers.add(mTvMusclePassive,  JLayeredPane.PALETTE_LAYER);
         layers.add(mTvAutoFight,      JLayeredPane.PALETTE_LAYER);
 
-        // --- COMBO PANEL ---
         mComboContainer = new JPanel(new FlowLayout());
         mComboContainer.setBackground(new Color(0, 0, 0, 220));
         mComboContainer.setVisible(false);
@@ -125,14 +114,10 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
             mComboContainer.add(mComboLabels[i]);
         }
 
-        // --- ACTION BUTTONS ---
         JPanel buttons = buildButtonPanel();
-
-        // --- ASSEMBLE ---
         JPanel centre = new JPanel(new BorderLayout());
         centre.add(layers,           BorderLayout.CENTER);
         centre.add(mComboContainer,  BorderLayout.SOUTH);
-
         add(hud,     BorderLayout.NORTH);
         add(centre,  BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
@@ -145,8 +130,8 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
         JPanel row1 = new JPanel(new GridLayout(1, 2, 4, 0));
         row1.setOpaque(false);
-        JButton btnPunch  = makeButton("👊 PUNCH",  new Color(0x3498DB, false), Color.WHITE);
-        JButton btnCharge = makeButton("⚡ CHARGE", new Color(0xFFD700), Color.BLACK);
+        JButton btnPunch = makeButton("PUNCH",  new Color(0x3498DB, false), Color.WHITE);
+        JButton btnCharge = makeButton("CHARGE", new Color(0xFFD700), Color.BLACK);
         btnPunch .addActionListener(e -> doPlayerPunch());
         btnCharge.addActionListener(e -> doPlayerCharge());
         row1.add(btnPunch);
@@ -154,8 +139,8 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
         JPanel row2 = new JPanel(new GridLayout(1, 3, 4, 0));
         row2.setOpaque(false);
-        JButton btnDodgeL = makeButton("← DODGE",  new Color(0x2ECC40), Color.WHITE);
-        JButton btnBlock  = makeButton("🛡 BLOCK",  new Color(0xE74C3C), Color.WHITE);
+        JButton btnDodgeL = makeButton("DODGE",  new Color(0x2ECC40), Color.WHITE);
+        JButton btnBlock = makeButton("BLOCK",  new Color(0xE74C3C), Color.WHITE);
         JButton btnDodgeR = makeButton("DODGE →",   new Color(0x2ECC40), Color.WHITE);
         btnDodgeL.addActionListener(e -> doPlayerDodge(-1));
         btnBlock .addActionListener(e -> doPlayerBlock());
@@ -167,7 +152,6 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         panel.add(row1);
         panel.add(row2);
 
-        // Keyboard shortcuts
         setupKeyBindings(btnPunch, btnCharge, btnBlock, btnDodgeL, btnDodgeR);
 
         return panel;
@@ -189,11 +173,9 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         am.put("dodgeR", new AbstractAction() { public void actionPerformed(ActionEvent e) { doPlayerDodge(1); }});
     }
 
-    // ── Fight start ───────────────────────────────────────────────────────────
-
     private void startFight() {
-        mSound  = new SoundManager();
-        mIdle   = new IdleEngine();
+        mSound = new SoundManager();
+        mIdle = new IdleEngine();
         mEngine = new FightEngine();
         String music = (mEnemy.fightType == GameConstants.FIGHT_CHAMPION)
                        ? "music_champion" : "music_fight";
@@ -210,8 +192,6 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         if (mSound  != null) { mSound.stopMusic(); mSound.destroy(); }
         mListener.onFightFinished(mWinFired, 0, 0, mFightIndex);
     }
-
-    // ── Player actions ────────────────────────────────────────────────────────
 
     private void onPlayerAction() {
         if (mAutoIdleTimer != null) mAutoIdleTimer.restart();
@@ -253,8 +233,6 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         advanceComboIfActive(dir < 0 ? FightEngine.MOVE_DODGE_L : FightEngine.MOVE_DODGE_R);
     }
 
-    // ── Combo tracking ────────────────────────────────────────────────────────
-
     private void advanceComboIfActive(int move) {
         if (mActiveCombo == null || mComboStep >= mActiveCombo.length) return;
         if (mActiveCombo[mComboStep] == move) {
@@ -274,8 +252,6 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
             mEngine.forceComboFail();
         }
     }
-
-    // ── Auto-fight ────────────────────────────────────────────────────────────
 
     private void scheduleAutoFightTimer() {
         if (mAutoIdleTimer != null) mAutoIdleTimer.stop();
@@ -302,8 +278,6 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         });
     }
 
-    // ── FightEngine callbacks ─────────────────────────────────────────────────
-
     @Override public void onPlayerDamaged(float hp, float dmg) {
         triggerPlayerAnim(FightView.ANIM_HURT);
         if (mFightView != null) mFightView.showFloatText("-" + (int) dmg, Color.RED);
@@ -324,7 +298,7 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
     @Override public void onPositionChanged(int pp, int ep) { refreshFightView(); }
 
     @Override public void onFameChanged(float fame, float delta) {
-        mTvFame.setText("⭐ " + (int) fame);
+        mTvFame.setText("" + (int) fame);
         if (delta > 0 && mFightView != null) mFightView.showFloatText("+" + (int) delta + " Fame", new Color(0xFFD700));
     }
 
@@ -332,7 +306,7 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         mTvMoney.setText("$" + (int) money);
         if (delta > 0 && mFightView != null) mFightView.showFloatText("+$" + (int) delta, new Color(0x2ECC40));
         if (mState.muscleMemoryUnlocked.get()) {
-            mTvMusclePassive.setText("💪 +$" + (int)(IdleEngine.FIGHT_PASSIVE_BONUS * mState.getEarnMult()));
+            mTvMusclePassive.setText("+$" + (int)(IdleEngine.FIGHT_PASSIVE_BONUS * mState.getEarnMult()));
             mTvMusclePassive.setVisible(true);
             Timer t = new Timer(800, e -> mTvMusclePassive.setVisible(false));
             t.setRepeats(false); t.start();
@@ -351,7 +325,7 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
     @Override public void onComboResult(boolean success) {
         if (success) { mSound.playSfx("sfx_combo_complete"); showEvent("🏅 COMBO COMPLETE!"); }
-        else           { showEvent("❌ Combo missed"); }
+        else           { showEvent("Combo missed"); }
         mActiveCombo = null; mComboStep = 0;
         mComboContainer.setVisible(false);
     }
@@ -361,9 +335,8 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
             mWinFired = true;
             mSound.playSfx("sfx_win");
             mSound.playSfx("sfx_crowd_cheer");
-            showEvent("🏆 KO! Next fight unlocked!");
+            showEvent("KO! Next fight unlocked!");
             refreshHud();
-            // Delay then notify listener
             Timer t = new Timer(2000, e -> {
                 if (mSound != null) { mSound.stopMusic(); mSound.destroy(); }
                 mListener.onFightFinished(true, mEnemy.moneyReward, mEnemy.fameReward, mFightIndex);
@@ -394,7 +367,7 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
     @Override public void onEnemyTelegraph(int type) {
         triggerEnemyAnim(FightView.ANIM_CHARGED);
-        showEvent("⚡ INCOMING POWER SHOT!");
+        showEvent("INCOMING POWER SHOT!");
     }
 
     @Override public void onImpactEffect(boolean hitPlayer, int moveType, float x, float y) {
@@ -405,11 +378,9 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
         if (mFightView != null) mFightView.triggerScreenShake(intensity);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
     private void refreshHud() {
         mTvMoney.setText("$" + (int) mState.getMoney());
-        mTvFame .setText("⭐ " + (int) mState.getFame());
+        mTvFame .setText("" + (int) mState.getFame());
     }
 
     private void refreshFightView() {
@@ -442,11 +413,11 @@ public class FightScreen extends JPanel implements FightEngine.FightCallback {
 
     private String moveName(int move) {
         switch (move) {
-            case FightEngine.MOVE_PUNCH:   return "👊 PUNCH";
-            case FightEngine.MOVE_BLOCK:   return "🛡 BLOCK";
-            case FightEngine.MOVE_DODGE_L: return "← DODGE";
-            case FightEngine.MOVE_DODGE_R: return "→ DODGE";
-            case FightEngine.MOVE_CHARGED: return "⚡ CHARGE";
+            case FightEngine.MOVE_PUNCH:   return "PUNCH";
+            case FightEngine.MOVE_BLOCK:   return "BLOCK";
+            case FightEngine.MOVE_DODGE_L: return "DODGE";
+            case FightEngine.MOVE_DODGE_R: return "DODGE";
+            case FightEngine.MOVE_CHARGED: return "CHARGE";
             default: return "?";
         }
     }

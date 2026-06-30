@@ -9,22 +9,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * FightEngine — all fight logic, AI, rewards, cookie-clicker loop.
- *
- * Key fixes:
- *  - Punch cooldown: player can't spam-kill
- *  - AI blocks, telegraphs, counters, and chases the player
- *  - stepTowardCorner moves ONE slot
- *  - Muscle Memory passive fires on every player punch
- */
 public class FightEngine {
 
-    public static final int MOVE_PUNCH   = 0, MOVE_BLOCK   = 1,
+    public static final int MOVE_PUNCH = 0, MOVE_BLOCK = 1,
                             MOVE_DODGE_L = 2, MOVE_DODGE_R = 3, MOVE_CHARGED = 4;
 
     private final GameState  mState = GameState.get();
-    private final IdleEngine mIdle  = new IdleEngine();
+    private final IdleEngine mIdle = new IdleEngine();
     private final ScheduledExecutorService mExec = Executors.newScheduledThreadPool(4);
     private final Random mRng = new Random();
     private final AtomicBoolean mRunning = new AtomicBoolean(false);
@@ -33,17 +24,15 @@ public class FightEngine {
     private FightCallback mCallback;
     private ScheduledFuture<?> mAITask, mComboTask, mCornerTask, mFameTask;
 
-    // Punch cooldown tracking
-    private final AtomicLong mLastPlayerPunchMs  = new AtomicLong(0);
+    private final AtomicLong mLastPlayerPunchMs = new AtomicLong(0);
     private final AtomicLong mLastChargedPunchMs = new AtomicLong(0);
 
     private volatile long    mLastPlayerBlock = 0;
-    private volatile int     mPunchStreak = 0, mBlockStreak = 0;
+    private volatile int mPunchStreak = 0, mBlockStreak = 0;
     private volatile boolean mEnemyCharging = false;
-    private volatile int     mAIPattern = 0;
+    private volatile int mAIPattern = 0;
     private volatile boolean mFirstKillDone = false;
 
-    // AI block state — enemy actively blocks when set
     private volatile boolean mEnemyIsBlocking = false;
 
     public interface FightCallback {
@@ -62,19 +51,17 @@ public class FightEngine {
         void onScreenShake(float intensity);
         void onRoundReset();
         void onKnockback(boolean playerKnockedBack);
-        void onEnemyBlocking(boolean blocking);   // NEW – UI can show block animation
+        void onEnemyBlocking(boolean blocking);  
     }
-
-    // ── Start / Stop ──────────────────────────────────────────────────────────
 
     public void startFight(EnemyData enemy, FightCallback cb) {
         if (mRunning.getAndSet(true)) stopFight();
-        mEnemy         = enemy;
-        mCallback      = cb;
+        mEnemy = enemy;
+        mCallback = cb;
         mFirstKillDone = false;
         mState.resetFight(enemy.maxHp);
         mPunchStreak = mBlockStreak = 0;
-        mAIPattern   = mRng.nextInt(3);
+        mAIPattern = mRng.nextInt(3);
         mEnemyCharging = false;
         mEnemyIsBlocking = false;
         mLastPlayerPunchMs.set(0);
@@ -96,12 +83,10 @@ public class FightEngine {
 
     public void destroy() { stopFight(); mExec.shutdownNow(); }
 
-    // ── Player inputs ─────────────────────────────────────────────────────────
-
     public void playerPunch() {
         if (!mRunning.get()) return;
         long now = System.currentTimeMillis();
-        if (now - mLastPlayerPunchMs.get() < GameConstants.PUNCH_COOLDOWN_MS) return; // cooldown
+        if (now - mLastPlayerPunchMs.get() < GameConstants.PUNCH_COOLDOWN_MS) return;
         mLastPlayerPunchMs.set(now);
         mExec.submit(() -> punch(false));
     }
@@ -135,26 +120,22 @@ public class FightEngine {
         });
     }
 
-    // ── Player combat ─────────────────────────────────────────────────────────
-
     private void punch(boolean charged) {
         mPunchStreak++;
         mBlockStreak = 0;
 
-        // If enemy is actively blocking, do reduced damage and no knockback
         boolean enemyBlocked = mEnemyIsBlocking;
         float rawDmg = (charged ? GameConstants.CHARGED_DAMAGE_MULT : 1f) * GameConstants.BASE_PLAYER_DAMAGE;
-        float dmg    = enemyBlocked ? rawDmg * 0.15f : rawDmg;
+        float dmg = enemyBlocked ? rawDmg * 0.15f : rawDmg;
 
         boolean dead = mState.damageEnemy(dmg);
 
         float earn = charged ? GameConstants.CHARGED_PUNCH_EARN : GameConstants.BASE_PUNCH_EARN;
         mState.addMoney(earn);
 
-        // Muscle Memory passive bonus on top of player's own earnings
         float passiveBonus = charged ? mIdle.onPlayerChargedPunch() : mIdle.onPlayerPunch();
 
-        int   mv   = charged ? MOVE_CHARGED : MOVE_PUNCH;
+        int mv = charged ? MOVE_CHARGED : MOVE_PUNCH;
         float fame = handleFame(mState.recordMove(mv));
         if (charged) { mState.addFame(GameConstants.FAME_CHARGED_BONUS); fame += GameConstants.FAME_CHARGED_BONUS; }
 
@@ -164,13 +145,12 @@ public class FightEngine {
             else if (r == 0) comboLose();
         }
 
-        // Knockback only if enemy wasn't blocking
         if (!enemyBlocked) stepTowardCorner(false);
 
-        final float fDmg       = dmg;
-        final float fEarn      = (earn * mState.getEarnMult()) + passiveBonus;
-        final float fFame      = fame;
-        final int   fMv        = mv;
+        final float fDmg = dmg;
+        final float fEarn = (earn * mState.getEarnMult()) + passiveBonus;
+        final float fFame = fame;
+        final int fMv = mv;
         final boolean fBlocked = enemyBlocked;
 
         SwingUtilities.invokeLater(() -> {
@@ -191,19 +171,18 @@ public class FightEngine {
     private void handleEnemyDeath() {
         if (!mFirstKillDone) {
             mFirstKillDone = true;
-            float rewardFame  = mEnemy.fameReward;
+            float rewardFame = mEnemy.fameReward;
             float rewardMoney = mEnemy.moneyReward;
             mState.addFame(rewardFame);
             mState.addMoney(rewardMoney);
             mState.saveState();
-            // CRITICAL: persist championship progress right now
             SaveManager.saveChampionshipProgress(mState, mEnemy);
             SwingUtilities.invokeLater(() -> {
                 mCallback.onFightWon(rewardMoney * mState.getEarnMult(), rewardFame);
                 mCallback.onFightEvent("🏆 KO! Next fight unlocked!");
             });
         } else {
-            float bonusMoney = mEnemy.moneyReward * 0.15f; // reduced repeat bonus
+            float bonusMoney = mEnemy.moneyReward * 0.15f;  
             mState.addMoney(bonusMoney);
             mState.saveState();
             SwingUtilities.invokeLater(() -> {
@@ -217,7 +196,7 @@ public class FightEngine {
     private void resetRound() {
         if (!mRunning.get()) return;
         mState.resetFight(mEnemy.maxHp);
-        mEnemyCharging   = false;
+        mEnemyCharging = false;
         mEnemyIsBlocking = false;
         mState.setEnemyBlocking(false);
         SwingUtilities.invokeLater(() -> {
@@ -226,10 +205,7 @@ public class FightEngine {
         });
     }
 
-    // ── AI ────────────────────────────────────────────────────────────────────
-
     private void scheduleAI() {
-        // AI tick speed scales with enemy difficulty
         long tickMs = Math.max(120, mEnemy.attackIntervalMs / 12);
         mAITask = mExec.scheduleAtFixedRate(this::aiThink, tickMs, tickMs, TimeUnit.MILLISECONDS);
     }
@@ -237,16 +213,13 @@ public class FightEngine {
     private void aiThink() {
         if (!mRunning.get()) return;
 
-        // Skill 0.0–1.0 based on fight type
         float skill = Math.min(0.95f, 0.20f + mEnemy.fightType * 0.18f);
         float aggression = Math.min(0.90f, 0.30f + mEnemy.fightType * 0.14f);
 
-        // Randomly switch AI pattern
         if (mRng.nextFloat() < 0.04f) mAIPattern = mRng.nextInt(4);
 
         long sincePlayerPunch = System.currentTimeMillis() - mLastPlayerPunchMs.get();
 
-        // React to player punching: skilled enemies block or dodge
         if (sincePlayerPunch < 500 && mRng.nextFloat() < skill) {
             if (mRng.nextFloat() < 0.55f) {
                 setEnemyBlock(true, 400 + (int)(mRng.nextFloat() * 300));
@@ -258,33 +231,31 @@ public class FightEngine {
             return;
         }
 
-        // Stop blocking if it's been a while
         if (mEnemyIsBlocking && mRng.nextFloat() < 0.3f) {
             setEnemyBlock(false, 0);
         }
 
-        // Pattern-based AI
         switch (mAIPattern) {
-            case 0: // Aggressive
+            case 0: 
                 if (mRng.nextFloat() < aggression) executeAttack();
                 else if (atSamePos() && mRng.nextFloat() < 0.35f) chasePlayer();
                 break;
 
-            case 1: // Counter-fighter — waits then punishes
+            case 1:
                 if (sincePlayerPunch < 800 && mRng.nextFloat() < skill * 0.8f) {
-                    executeAttack(); // punish after blocking
+                    executeAttack(); 
                 } else if (mRng.nextFloat() < 0.25f) {
                     setEnemyBlock(true, 500 + mRng.nextInt(400));
                 }
                 break;
 
-            case 2: // Pressure — closes distance and attacks
+            case 2: 
                 int dist = Math.abs(mState.getPosition() - mState.getEnemyPos());
                 if (dist > 1 && mRng.nextFloat() < 0.6f) chasePlayer();
                 else if (dist <= 1 && mRng.nextFloat() < aggression) executeAttack();
                 break;
 
-            case 3: // Mix — blocks then charges
+            case 3: 
                 if (!mEnemyIsBlocking && mRng.nextFloat() < 0.3f) {
                     setEnemyBlock(true, 600 + mRng.nextInt(500));
                 } else if (mRng.nextFloat() < 0.4f) {
@@ -321,12 +292,11 @@ public class FightEngine {
     private void chasePlayer() {
         int pPos = mState.getPosition();
         int ePos = mState.getEnemyPos();
-        int dir  = (ePos > pPos) ? -1 : 1; // mirror: enemy moves toward player
+        int dir = (ePos > pPos) ? -1 : 1; 
         mState.shiftEnemyPosition(dir);
         notifyPos();
     }
 
-    /** Sets enemy blocking and auto-releases after durationMs (0 = manual) */
     private void setEnemyBlock(boolean blocking, int durationMs) {
         mEnemyIsBlocking = blocking;
         mState.setEnemyBlocking(blocking);
@@ -341,7 +311,7 @@ public class FightEngine {
     }
 
     private void attack(boolean charged) {
-        float dmg    = mEnemy.attackDamage * (charged ? GameConstants.CHARGED_DAMAGE_MULT : 1f);
+        float dmg = mEnemy.attackDamage * (charged ? GameConstants.CHARGED_DAMAGE_MULT : 1f);
         boolean dead = mState.damagePlayer(dmg);
 
         if (!mState.isBlocking()) stepTowardCorner(true);
@@ -368,16 +338,14 @@ public class FightEngine {
     }
 
     private void stepTowardCorner(boolean isPlayer) {
-        int pos    = isPlayer ? mState.getPosition() : mState.getEnemyPos();
-        int mid    = GameConstants.POSITION_SLOTS / 2;
+        int pos = isPlayer ? mState.getPosition() : mState.getEnemyPos();
+        int mid = GameConstants.POSITION_SLOTS / 2;
         int target = (pos <= mid) ? GameConstants.CORNER_SLOT_LEFT : GameConstants.CORNER_SLOT_RIGHT;
-        int step   = (target < pos) ? -1 : 1;
+        int step = (target < pos) ? -1 : 1;
         if (isPlayer) mState.shiftPosition(step);
         else          mState.shiftEnemyPosition(step);
         SwingUtilities.invokeLater(() -> { mCallback.onKnockback(isPlayer); notifyPos(); });
     }
-
-    // ── Reactions ─────────────────────────────────────────────────────────────
 
     private void reactToHit(boolean charged, boolean wasBlocked) {
         if (!wasBlocked && charged && mRng.nextFloat() < 0.5f) {
@@ -398,19 +366,15 @@ public class FightEngine {
         }
     }
 
-    // ── Fame ──────────────────────────────────────────────────────────────────
-
     private float handleFame(boolean spam) {
         float delta = spam ? -GameConstants.FAME_LOSE_SPAM : GameConstants.FAME_GAIN_VARIETY;
         mState.addFame(delta);
         return delta;
     }
 
-    // ── Combos ────────────────────────────────────────────────────────────────
-
     private void comboWin() {
         float money = 150f * mState.getEarnMult();
-        float fame  = GameConstants.FAME_GAIN_COMBO;
+        float fame = GameConstants.FAME_GAIN_COMBO;
         mState.addMoney(money);
         mState.addFame(fame);
         SwingUtilities.invokeLater(() -> {
@@ -422,8 +386,6 @@ public class FightEngine {
 
     private void comboLose() { SwingUtilities.invokeLater(() -> mCallback.onComboResult(false)); }
 
-    // ── Victory / Defeat ──────────────────────────────────────────────────────
-
     private void defeat() {
         stopFight();
         float loss = mEnemy.moneyPenalty;
@@ -432,8 +394,6 @@ public class FightEngine {
         SwingUtilities.invokeLater(() -> mCallback.onFightLost(loss));
     }
 
-
-    // ── Combo externally resolved by FightActivity ───────────────────────────
     public void forceComboComplete() {
         if (mRunning.get()) mExec.submit(this::comboWin);
     }
@@ -441,13 +401,11 @@ public class FightEngine {
         if (mRunning.get()) SwingUtilities.invokeLater(() -> mCallback.onComboResult(false));
     }
 
-    // ── Scheduled systems ─────────────────────────────────────────────────────
-
     private void scheduleCombos() {
         mComboTask = mExec.scheduleAtFixedRate(() -> {
             if (!mRunning.get() || mState.comboActive.get()) return;
             int[] combo = new int[GameConstants.COMBO_LENGTH];
-            int[] pool  = {MOVE_PUNCH, MOVE_BLOCK, MOVE_DODGE_L, MOVE_DODGE_R};
+            int[] pool = {MOVE_PUNCH, MOVE_BLOCK, MOVE_DODGE_L, MOVE_DODGE_R};
             for (int i = 0; i < combo.length; i++) combo[i] = pool[mRng.nextInt(pool.length)];
             mState.setActiveComboPrompt(combo);
             SwingUtilities.invokeLater(() -> mCallback.onComboPrompt(combo));
@@ -481,8 +439,6 @@ public class FightEngine {
             if (pos > 0 && pos < GameConstants.POSITION_SLOTS - 1) mState.addFame(0.1f);
         }, 5000, 5000, TimeUnit.MILLISECONDS);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void notifyPos() {
         SwingUtilities.invokeLater(() -> mCallback.onPositionChanged(mState.getPosition(), mState.getEnemyPos()));

@@ -1,8 +1,5 @@
 package com.boxergame;
 
-/**
- * All opponents. Drawable fields are resource names resolved by Assets.
- */
 public final class EnemyRoster {
 
     public static final EnemyData SPARRING_PARTNER = new EnemyData(

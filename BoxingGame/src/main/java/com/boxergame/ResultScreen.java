@@ -5,14 +5,13 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-/** Desktop replacement for ResultActivity. */
 public class ResultScreen extends JPanel {
 
     public interface ResultListener { void onContinue(); }
 
     private static final int CHAMPION_INDEX = EnemyRoster.CHAMPIONSHIP_PATH.length - 1;
 
-    private static final Color BG   = new Color(0x0D0D1A);
+    private static final Color BG = new Color(0x0D0D1A);
     private static final Color GOLD = new Color(0xFFD700);
 
     public ResultScreen(boolean won, float moneyDelta, float fameDelta,
@@ -28,27 +27,25 @@ public class ResultScreen extends JPanel {
 
         if (firstChampionWin) {
             int ending = LobbyScreen.resolveEnding(s.getMoney(), s.getFame());
-            title      = endingTitle(ending);
-            detail     = endingBody(ending, s.getMoney(), s.getFame()) + "\n\nThe fight continues — keep earning!";
-            btnText    = "Keep Fighting!";
+            title = endingTitle(ending);
+            detail = endingBody(ending, s.getMoney(), s.getFame()) + "\n\nThe fight continues — keep earning!";
+            btnText = "Keep Fighting!";
             endingArtName = endingArtResource(ending);
         } else if (won) {
-            title   = "🏆  VICTORY!";
-            detail  = "+" + (int) moneyDelta + " earned\n+" + (int) fameDelta + " fame\n\nEnemy respawns — go earn more!";
+            title = "VICTORY!";
+            detail = "+" + (int) moneyDelta + " earned\n+" + (int) fameDelta + " fame\n\nEnemy respawns — go earn more!";
             btnText = "Back to Lobby";
         } else {
-            title   = "💀  KNOCKED OUT";
-            detail  = "You lost $" + (int) Math.abs(moneyDelta) + "\nTrain harder and try again.";
+            title = "KNOCKED OUT";
+            detail = "You lost $" + (int) Math.abs(moneyDelta) + "\nTrain harder and try again.";
             btnText = "Back to Lobby";
         }
 
-        // Title
         JLabel tvTitle = new JLabel(title, SwingConstants.CENTER);
         tvTitle.setFont(new Font("SansSerif", Font.BOLD, 36));
         tvTitle.setForeground(GOLD);
         tvTitle.setBorder(new EmptyBorder(30, 20, 16, 20));
 
-        // Ending art
         JLabel ivEnding = new JLabel();
         ivEnding.setHorizontalAlignment(SwingConstants.CENTER);
         if (endingArtName != null) {
@@ -56,7 +53,6 @@ public class ResultScreen extends JPanel {
             if (img != null) ivEnding.setIcon(new ImageIcon(img));
         }
 
-        // Detail text
         JTextArea tvDetail = new JTextArea(detail);
         tvDetail.setEditable(false);
         tvDetail.setFont(new Font("SansSerif", Font.PLAIN, 16));
@@ -67,7 +63,6 @@ public class ResultScreen extends JPanel {
         tvDetail.setAlignmentX(CENTER_ALIGNMENT);
         tvDetail.setBorder(new EmptyBorder(0, 40, 30, 40));
 
-        // Continue button
         JButton btnContinue = new JButton(btnText);
         btnContinue.setBackground(new Color(0xE53935));
         btnContinue.setForeground(Color.WHITE);
@@ -96,10 +91,10 @@ public class ResultScreen extends JPanel {
 
     private String endingTitle(int e) {
         switch (e) {
-            case 0: return "🌟 LEGEND RETIRES";
-            case 1: return "😞 FORGOTTEN FIGHTER";
-            case 2: return "💰 RICH BUT FORGOTTEN";
-            case 3: return "⭐ BELOVED BUT BROKE";
+            case 0: return "LEGEND RETIRES";
+            case 1: return "FORGOTTEN FIGHTER";
+            case 2: return "RICH BUT FORGOTTEN";
+            case 3: return "BELOVED BUT BROKE";
             default: return "RETIREMENT";
         }
     }

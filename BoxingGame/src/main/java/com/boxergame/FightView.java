@@ -8,49 +8,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * FightView — desktop Swing JPanel.
- * Faithfully reproduces the Android Canvas rendering logic from FightView.java.
- */
 public class FightView extends JPanel {
 
     public static final int ANIM_NORMAL = 0, ANIM_PUNCH = 1, ANIM_BLOCK = 2,
                              ANIM_CHARGED = 3, ANIM_HURT = 4;
 
-    private static final Color CLR_HP_GREEN  = new Color(0x2ECC40);
+    private static final Color CLR_HP_GREEN = new Color(0x2ECC40);
     private static final Color CLR_HP_YELLOW = new Color(0xFFDC00);
-    private static final Color CLR_HP_RED    = new Color(0xFF4136);
-    private static final Color CLR_HP_BG     = new Color(0, 0, 0, 153);
+    private static final Color CLR_HP_RED = new Color(0xFF4136);
+    private static final Color CLR_HP_BG = new Color(0, 0, 0, 153);
     private static final Color CLR_BAR_FRAME = Color.WHITE;
-    private static final int   SPRITE_W = 160, SPRITE_H = 240;
+    private static final int SPRITE_W = 160, SPRITE_H = 240;
 
-    // Sprites
     private BufferedImage mBackground;
     private BufferedImage mPlayerNormal, mPlayerPunch, mPlayerBlock, mPlayerCharge, mPlayerHurt;
     private BufferedImage mEnemyNormal,  mEnemyPunch,  mEnemyBlock,  mEnemyHurt;
 
-    // State
     private float mPlayerHpPct = 1f, mEnemyHpPct = 1f;
-    private int   mPlayerPos = 2, mEnemyPos = 2;
-    private int   mPlayerAnim = 0, mEnemyAnim = 0;
+    private int mPlayerPos = 2, mEnemyPos = 2;
+    private int mPlayerAnim = 0, mEnemyAnim = 0;
 
-    // Float text
     private String mFloatText = "";
     private float  mFloatAlpha = 0f, mFloatY = 0f;
     private Color  mFloatColor = Color.YELLOW;
 
-    // Screen shake
     private float mShakeX = 0, mShakeY = 0;
 
-    // Flash
     private float mFlashAlpha = 0f;
     private Color mFlashColor = Color.WHITE;
 
-    // Effects
-    private final List<Particle>     mParticles   = new ArrayList<>();
+    private final List<Particle>     mParticles = new ArrayList<>();
     private final List<ImpactRing>   mImpactRings = new ArrayList<>();
-    private final List<MotionStreak> mStreaks      = new ArrayList<>();
-    private final Random             mRnd          = new Random();
+    private final List<MotionStreak> mStreaks = new ArrayList<>();
+    private final Random             mRnd = new Random();
 
     private Timer mEffectTimer;
 
@@ -60,8 +50,6 @@ public class FightView extends JPanel {
         setFocusable(true);
     }
 
-    // ── Setters (called before fight starts) ─────────────────────────────────
-
     public void setArenaBackground(String name) {
         mBackground = Assets.getImage(name, 720, 960);
         repaint();
@@ -70,18 +58,18 @@ public class FightView extends JPanel {
     public void setPlayerSprites(String normal, String punch, String block,
                                   String charge, String hurt) {
         mPlayerNormal = Assets.getImage(normal, SPRITE_W, SPRITE_H);
-        mPlayerPunch  = Assets.getImage(punch,  SPRITE_W, SPRITE_H);
-        mPlayerBlock  = Assets.getImage(block,  SPRITE_W, SPRITE_H);
+        mPlayerPunch = Assets.getImage(punch,  SPRITE_W, SPRITE_H);
+        mPlayerBlock = Assets.getImage(block,  SPRITE_W, SPRITE_H);
         mPlayerCharge = Assets.getImage(charge, SPRITE_W, SPRITE_H);
-        mPlayerHurt   = Assets.getImage(hurt,   SPRITE_W, SPRITE_H);
+        mPlayerHurt = Assets.getImage(hurt,   SPRITE_W, SPRITE_H);
         repaint();
     }
 
     public void setEnemySprites(String normal, String punch, String block, String hurt) {
         mEnemyNormal = Assets.getImage(normal, SPRITE_W, SPRITE_H);
-        mEnemyPunch  = Assets.getImage(punch,  SPRITE_W, SPRITE_H);
-        mEnemyBlock  = Assets.getImage(block,  SPRITE_W, SPRITE_H);
-        mEnemyHurt   = Assets.getImage(hurt,   SPRITE_W, SPRITE_H);
+        mEnemyPunch = Assets.getImage(punch,  SPRITE_W, SPRITE_H);
+        mEnemyBlock = Assets.getImage(block,  SPRITE_W, SPRITE_H);
+        mEnemyHurt = Assets.getImage(hurt,   SPRITE_W, SPRITE_H);
         repaint();
     }
 
@@ -89,19 +77,19 @@ public class FightView extends JPanel {
                                   int playerPos, int enemyPos,
                                   int playerAnim, int enemyAnim) {
         mPlayerHpPct = playerHpPct;
-        mEnemyHpPct  = enemyHpPct;
-        mPlayerPos   = playerPos;
-        mEnemyPos    = enemyPos;
-        mPlayerAnim  = playerAnim;
-        mEnemyAnim   = enemyAnim;
+        mEnemyHpPct = enemyHpPct;
+        mPlayerPos = playerPos;
+        mEnemyPos = enemyPos;
+        mPlayerAnim = playerAnim;
+        mEnemyAnim = enemyAnim;
         repaint();
     }
 
     public void showFloatText(String text, Color color) {
-        mFloatText  = text;
+        mFloatText = text;
         mFloatAlpha = 1f;
         mFloatColor = color;
-        mFloatY     = getHeight() * 0.45f;
+        mFloatY = getHeight() * 0.45f;
         startEffectLoop();
     }
 
@@ -167,8 +155,6 @@ public class FightView extends JPanel {
         mEffectTimer.start();
     }
 
-    // ── Painting ──────────────────────────────────────────────────────────────
-
     @Override
     protected void paintComponent(Graphics g2d) {
         super.paintComponent(g2d);
@@ -178,7 +164,6 @@ public class FightView extends JPanel {
 
         g.translate(mShakeX, mShakeY);
 
-        // Background
         if (mBackground != null) {
             g.drawImage(mBackground, 0, 0, W, H, null);
         } else {
@@ -186,16 +171,13 @@ public class FightView extends JPanel {
             g.fillRect(0, 0, W, H);
         }
 
-        // Floor line
         int floorY = (int) (H * 0.72f);
         g.setColor(new Color(255, 255, 255, 100));
         g.setStroke(new BasicStroke(2f));
         g.drawLine(0, floorY, W, floorY);
 
-        // Position strip
         drawPositionStrip(g, W, H);
 
-        // Characters
         float slotW = W / (float) GameConstants.POSITION_SLOTS;
         float eCentreX = slotW * (GameConstants.POSITION_SLOTS - 1 - mEnemyPos) + slotW / 2f;
         drawCharacter(g, selectEnemySprite(), (int) eCentreX, floorY - 10, SPRITE_W, SPRITE_H, true,
@@ -205,7 +187,6 @@ public class FightView extends JPanel {
         drawCharacter(g, selectPlayerSprite(), (int) pCentreX, floorY - 10, SPRITE_W, SPRITE_H, false,
                       new Color(0x3498DB));
 
-        // Effects
         for (MotionStreak s : mStreaks) s.draw(g);
         for (ImpactRing  r : mImpactRings) r.draw(g);
         for (Particle    p : mParticles) p.draw(g);
@@ -217,10 +198,8 @@ public class FightView extends JPanel {
 
         g.translate(-mShakeX, -mShakeY);
 
-        // HP bars (not shaken)
         drawHpBars(g, W, H);
 
-        // Float text
         if (mFloatAlpha > 0) {
             g.setFont(new Font("SansSerif", Font.BOLD, 46));
             g.setColor(withAlpha(mFloatColor, mFloatAlpha));
@@ -303,8 +282,6 @@ public class FightView extends JPanel {
     private static Color withAlpha(Color c, float alpha) {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), (int) (alpha * 255));
     }
-
-    // ── Effect inner classes ──────────────────────────────────────────────────
 
     private static class Particle {
         float x, y, vx, vy, alpha = 1f, size;
